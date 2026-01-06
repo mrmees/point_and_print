@@ -5,6 +5,20 @@ This Python script (`point_and_print.py`) automatically inserts Klipper `SET_SER
 
 The script is designed to be used as a post-processing script in your slicer software, where it will automatically process each gcode file after slicing.
 
+## ⚠️ Critical Requirement
+
+**You MUST enable "Exclude objects" in your slicer!**
+
+The script requires `EXCLUDE_OBJECT_DEFINE` and `EXCLUDE_OBJECT_START` commands in the gcode. These are only generated when the "Exclude objects" option is enabled in your slicer settings.
+
+- ❌ "Label objects" alone is **NOT sufficient**
+- ✅ "Exclude objects" **MUST be enabled**
+
+**Location in PrusaSlicer/SuperSlicer/OrcaSlicer:**  
+Print Settings → Output Options → ☑ Exclude objects
+
+See SLICER_SETUP.md for detailed instructions for your specific slicer.
+
 ## Camera Configuration
 
 **IMPORTANT:** Before using this script, you must configure your camera's position and servo!
@@ -71,6 +85,15 @@ INVERT_SERVO = False  # Set to True if servo is mounted upside down
    - Set to `True` if servo is mounted upside down
    - When inverted, angles are mirrored over the centerline
    - Example: 60° becomes 120°, 90° stays 90°, 120° becomes 60°
+
+### How Servo Angles are Calculated:
+
+The script assumes your servo is positioned so that at its **midpoint**, the camera points at the **center of the bed**:
+
+- **90° servo**: Midpoint is 45°, camera points at bed center when servo is at 45°
+- **180° servo**: Midpoint is 90°, camera points at bed center when servo is at 90°
+
+The script calculates the angular difference between the bed center and each object, then adds/subtracts this from the midpoint to determine the servo position needed to point at the object.
 
 ## Usage
 
@@ -297,6 +320,11 @@ If your gcode format differs from the expected format, you may need to adjust th
 ## Troubleshooting
 
 **"No objects found in EXECUTABLE_BLOCK_START section"**
+- **MOST COMMON CAUSE**: "Exclude objects" is not enabled in your slicer!
+  - Go to Print Settings → Output Options → Enable "Exclude objects"
+  - Re-slice your model
+  - Verify `EXCLUDE_OBJECT_DEFINE` commands appear in the gcode
+- "Label objects" alone is NOT sufficient - you need "Exclude objects"
 - Check that your gcode file has an EXECUTABLE_BLOCK_START section
 - Verify the format of object definitions matches the expected pattern
 - The script may need adjustment for your specific slicer's output format

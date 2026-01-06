@@ -2,12 +2,33 @@
 
 This guide shows how to add the point_and_print.py script as a post-processing script in popular slicers.
 
+## ⚠️ CRITICAL REQUIREMENT
+
+**You MUST enable "Exclude objects" in your slicer settings!**
+
+The script requires the `EXCLUDE_OBJECT_DEFINE` and `EXCLUDE_OBJECT_START` commands that are only generated when "Exclude objects" is enabled.
+
+- ❌ **"Label objects" alone is NOT sufficient** - this only adds comments
+- ✅ **"Exclude objects" must be enabled** - this generates the required commands
+
+**Without "Exclude objects" enabled, the script will fail with an error during printing.**
+
+---
+
 ## PrusaSlicer / SuperSlicer / OrcaSlicer
 
+### Step 1: Enable Exclude Objects
 1. Open your slicer
 2. Go to **Print Settings** → **Output options**
-3. Find the **Post-processing scripts** field
-4. Add the following line:
+3. Find and **enable** the checkbox: **"Exclude objects"**
+4. Click **OK** or **Save**
+
+### Step 2: Add Post-Processing Script
+
+### Step 2: Add Post-Processing Script
+1. In the same **Print Settings** → **Output options** section
+2. Find the **Post-processing scripts** field
+3. Add the following line:
    ```
    python /full/path/to/point_and_print.py
    ```
@@ -93,14 +114,48 @@ If this works, the slicer integration should work too.
 
 ## Verification
 
-After slicing a file, check that the script ran successfully:
+After slicing a file, check that both requirements are met:
 
-1. Open the generated gcode file in a text editor
-2. Search for `POINT_CAMERA`
-3. You should see lines like:
-   ```gcode
-   POINT_CAMERA COORDINATE_X=123.45 COORDINATE_Y=67.89
-   EXCLUDE_OBJECT_START NAME=object_name
-   ```
+### 1. Verify "Exclude objects" is working
+Open the generated gcode file and search for:
+- `EXCLUDE_OBJECT_DEFINE` - Should appear near the beginning
+- `EXCLUDE_OBJECT_START` - Should appear throughout the file
 
-If you see these commands, the script is working correctly!
+If these commands are **missing**, "Exclude objects" is not enabled in your slicer!
+
+### 2. Verify the script ran successfully
+Search for `SET_SERVO` in the gcode:
+```gcode
+SET_SERVO SERVO=camera_servo ANGLE=90.00
+EXCLUDE_OBJECT_START NAME=object_name
+```
+
+If you see these commands, everything is working correctly!
+
+## Troubleshooting "Exclude Objects"
+
+### Error: "No objects found in EXECUTABLE_BLOCK_START section"
+
+**Cause:** "Exclude objects" is not enabled in your slicer.
+
+**Solution:**
+1. Go back to **Print Settings** → **Output options**
+2. Enable the **"Exclude objects"** checkbox
+3. Re-slice your model
+4. Verify `EXCLUDE_OBJECT_DEFINE` appears in the gcode
+
+### "Label objects" vs "Exclude objects"
+
+Many slicers have BOTH options:
+- **Label objects** - Adds comments like `; printing object name`
+- **Exclude objects** - Adds actual commands like `EXCLUDE_OBJECT_START`
+
+**You need "Exclude objects" enabled!** Label objects alone won't work.
+
+### Common Mistakes
+
+❌ Only enabled "Label objects"  
+❌ Enabled neither option  
+❌ Enabled "Exclude objects" but it's not generating commands (try different slicer version)
+
+✅ "Exclude objects" is enabled and `EXCLUDE_OBJECT_START` appears in gcode
