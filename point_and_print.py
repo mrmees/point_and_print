@@ -36,6 +36,11 @@ SERVO_RANGE = 180  # Options: 90 or 180 degrees
 # Example: If your printer.cfg has [servo camera_servo], set this to "camera_servo"
 SERVO_NAME = "camera_servo"
 
+# Invert servo angles (for upside-down mounted servos)
+# When True, angles are mirrored over the centerline
+# Example: For 180° servo: 60° becomes 120°, 90° stays 90°, 120° becomes 60°
+INVERT_SERVO = False  # Set to True if servo is mounted upside down
+
 # The servo is assumed to be positioned so that at its midpoint (45° for 90° servo,
 # 90° for 180° servo), the camera points at the center of the bed
 # ============================================================================
@@ -85,6 +90,11 @@ def calculate_angle(camera_pos, object_center, bed_center):
     
     # Clamp to valid servo range
     servo_angle = max(0, min(SERVO_RANGE, servo_angle))
+    
+    # Invert angle if servo is mounted upside down
+    # This mirrors the angle over the centerline
+    if INVERT_SERVO:
+        servo_angle = SERVO_RANGE - servo_angle
     
     return servo_angle
 
