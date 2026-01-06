@@ -29,6 +29,9 @@ SERVO_RANGE = 180  # Options: 90 or 180 degrees
 
 # Klipper servo name (must match the name in your printer.cfg)
 SERVO_NAME = "camera_servo"
+
+# Invert servo angles (for upside-down mounted servos)
+INVERT_SERVO = False  # Set to True if servo is mounted upside down
 # ============================================================================
 ```
 
@@ -49,6 +52,12 @@ SERVO_NAME = "camera_servo"
 4. **Set Servo Name** (`SERVO_NAME`)
    - Must match the servo name defined in your Klipper `printer.cfg`
    - Example: If your config has `[servo camera_servo]`, use `"camera_servo"`
+
+5. **Set Servo Inversion** (`INVERT_SERVO`)
+   - Set to `False` for normal servo mounting (default)
+   - Set to `True` if servo is mounted upside down
+   - When inverted, angles are mirrored over the centerline
+   - Example: 60° becomes 120°, 90° stays 90°, 120° becomes 60°
 
 ### How Servo Angles are Calculated:
 
@@ -284,3 +293,18 @@ If your gcode format differs from the expected format, you may need to adjust th
 **"Object 'xyz' not found in EXECUTABLE_BLOCK_START section"**
 - Object names in EXECUTABLE_BLOCK_START and EXCLUDE_OBJECT_START don't match
 - Check for typos or formatting differences in object names
+
+**Servo moves opposite direction from expected**
+- Your servo may be mounted upside down
+- Set `INVERT_SERVO = True` in the script configuration
+- This will mirror all angles over the centerline (60° ↔ 120°, 90° stays 90°)
+
+**Servo doesn't point at objects correctly**
+- Verify physical alignment: at midpoint angle, camera should point at bed center
+- Check `CAMERA_X`, `CAMERA_Y`, `BED_WIDTH`, `BED_DEPTH` settings
+- Ensure `SERVO_RANGE` matches your servo (90 or 180)
+- Test manually: `SET_SERVO SERVO=camera_servo ANGLE=90` should point at bed center
+
+**Servo name error in Klipper**
+- `SERVO_NAME` in script must exactly match servo name in `printer.cfg`
+- Example: `[servo my_cam]` requires `SERVO_NAME = "my_cam"`

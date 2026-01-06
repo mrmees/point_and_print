@@ -169,7 +169,29 @@ EXCLUDE_OBJECT_START NAME=object_name
 ### Servo moves in wrong direction
 - Angles are correct but camera points wrong way
 - The servo horn might be installed 180° off
-- Remove and reattach servo horn in correct orientation
+- **OR** the servo is mounted upside down
+- **Solution 1**: Remove and reattach servo horn in correct orientation
+- **Solution 2**: Set `INVERT_SERVO = True` in the script (mirrors all angles)
+
+### Understanding INVERT_SERVO
+
+If your servo is physically mounted upside down, the rotation direction will be reversed. Instead of remounting the hardware, you can set `INVERT_SERVO = True` in the script.
+
+**How it works:**
+- Mirrors angles over the centerline
+- For 180° servo: `inverted_angle = 180 - normal_angle`
+- For 90° servo: `inverted_angle = 90 - normal_angle`
+- Center angle (90° or 45°) stays the same
+
+**Example with 180° servo:**
+- Normal 60° → Inverted 120°
+- Normal 90° → Inverted 90° (unchanged)
+- Normal 120° → Inverted 60°
+
+**When to use:**
+- Servo is physically mounted upside down and cannot be remounted
+- Camera pans in the opposite direction from expected
+- Angles are numerically correct but pointing wrong way
 
 ### Servo jitters/buzzes
 - Pulse width at mechanical limit
@@ -212,6 +234,7 @@ BED_WIDTH = 350.0
 BED_DEPTH = 350.0
 SERVO_RANGE = 180
 SERVO_NAME = "camera_servo"
+INVERT_SERVO = False  # Set to True if mounted upside down
 ```
 
 ### Test Commands
