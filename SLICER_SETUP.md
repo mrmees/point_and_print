@@ -1,6 +1,6 @@
 # Slicer Setup Guide
 
-This guide shows how to add the gcode_camera_inserter.py script as a post-processing script in popular slicers.
+This guide shows how to add the point_and_print.py script as a post-processing script in popular slicers.
 
 ## PrusaSlicer / SuperSlicer / OrcaSlicer
 
@@ -9,20 +9,20 @@ This guide shows how to add the gcode_camera_inserter.py script as a post-proces
 3. Find the **Post-processing scripts** field
 4. Add the following line:
    ```
-   python /full/path/to/gcode_camera_inserter.py
+   python /full/path/to/point_and_print.py
    ```
    Replace `/full/path/to/` with the actual path where you saved the script
 
 5. Click **OK** or **Save**
 
 **Example:**
-- Windows: `python C:\Users\YourName\Documents\gcode_camera_inserter.py`
-- Linux/Mac: `python /home/yourname/scripts/gcode_camera_inserter.py`
+- Windows: `python C:\Users\YourName\Documents\point_and_print.py`
+- Linux/Mac: `python /home/yourname/scripts/point_and_print.py`
 
 ### Alternative: Using Python3 explicitly
 If you have both Python 2 and Python 3 installed, use:
 ```
-python3 /full/path/to/gcode_camera_inserter.py
+python3 /full/path/to/point_and_print.py
 ```
 
 ## Cura
@@ -45,7 +45,7 @@ python3 /full/path/to/gcode_camera_inserter.py
 3. Go to the **Scripts** tab
 4. In the **Post Processing** section, add:
    ```
-   python /full/path/to/gcode_camera_inserter.py [output_filepath]
+   python /full/path/to/point_and_print.py [output_filepath]
    ```
 
 **Note:** Use `[output_filepath]` as a placeholder - Simplify3D will replace it with the actual file path.
@@ -57,7 +57,7 @@ python3 /full/path/to/gcode_camera_inserter.py
 3. Find the **Post-processing script** section
 4. Add:
    ```
-   python /full/path/to/gcode_camera_inserter.py
+   python /full/path/to/point_and_print.py
    ```
 
 ## Bambu Studio
@@ -78,7 +78,7 @@ python3 /full/path/to/gcode_camera_inserter.py
 ### Script not executing
 - Check that the script has the correct permissions (especially on Linux/Mac):
   ```bash
-  chmod +x /path/to/gcode_camera_inserter.py
+  chmod +x /path/to/point_and_print.py
   ```
 - Verify the Python path is correct
 - Check slicer logs for error messages
@@ -86,7 +86,7 @@ python3 /full/path/to/gcode_camera_inserter.py
 ### Testing the script
 Before adding it to your slicer, test it manually:
 ```bash
-python gcode_camera_inserter.py /path/to/test_file.gcode
+python point_and_print.py /path/to/test_file.gcode
 ```
 
 If this works, the slicer integration should work too.
