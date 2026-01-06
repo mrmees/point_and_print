@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GCode Camera Position Inserter for Klipper
+Point and Print - Camera Position Script for Klipper
 
 This script parses a gcode file to:
 1. Extract object names and center coordinates from the EXECUTABLE_BLOCK_START section
@@ -36,13 +36,21 @@ SERVO_RANGE = 180  # Options: 90 or 180 degrees
 # Example: If your printer.cfg has [servo camera_servo], set this to "camera_servo"
 SERVO_NAME = "camera_servo"
 
+# Servo angle that points camera at bed center
+# This is the angle you manually set where the camera points at the bed center
+# After physical alignment, test with: SET_SERVO SERVO=camera_servo ANGLE=X
+# and adjust this value to match the angle where camera points at bed center
+# Common values: 90 for centered 180° servo, 45 for centered 90° servo
+# But can be any value within your SERVO_RANGE if servo is mounted off-center
+SERVO_CENTER_ANGLE = 90.0  # The angle that points camera at bed center
+
 # Invert servo angles (for upside-down mounted servos)
 # When True, angles are mirrored over the centerline
 # Example: For 180° servo: 60° becomes 120°, 90° stays 90°, 120° becomes 60°
 INVERT_SERVO = False  # Set to True if servo is mounted upside down
 
-# The servo is assumed to be positioned so that at its midpoint (45° for 90° servo,
-# 90° for 180° servo), the camera points at the center of the bed
+# The servo center angle is your reference point - all object angles are calculated
+# relative to this center position
 # ============================================================================
 
 
@@ -50,10 +58,9 @@ def calculate_angle(camera_pos, object_center, bed_center):
     """
     Calculate the servo angle needed to point the camera at an object.
     
-    The calculation assumes:
-    - The servo's midpoint position has the camera pointing at bed center
-    - For 90° servo: midpoint is at 45°, range is 0-90°
-    - For 180° servo: midpoint is at 90°, range is 0-180°
+    The calculation uses SERVO_CENTER_ANGLE as the reference point where
+    the camera points at bed center. All object angles are calculated
+    relative to this reference position.
     
     Args:
         camera_pos: Tuple (x, y) of camera position
@@ -84,9 +91,8 @@ def calculate_angle(camera_pos, object_center, bed_center):
     while angle_difference < -180:
         angle_difference += 360
     
-    # Calculate servo position based on servo range
-    servo_midpoint = SERVO_RANGE / 2.0
-    servo_angle = servo_midpoint + angle_difference
+    # Calculate servo position using the configured center angle as reference
+    servo_angle = SERVO_CENTER_ANGLE + angle_difference
     
     # Clamp to valid servo range
     servo_angle = max(0, min(SERVO_RANGE, servo_angle))
@@ -209,7 +215,7 @@ def process_gcode_file(filepath):
     print(f"Read {len(gcode_lines)} lines")
     print(f"Camera position: ({CAMERA_X}, {CAMERA_Y})")
     print(f"Bed size: {BED_WIDTH}x{BED_DEPTH} mm, center: ({BED_WIDTH/2}, {BED_DEPTH/2})")
-    print(f"Servo range: {SERVO_RANGE}° (midpoint at {SERVO_RANGE/2}° points to bed center)")
+    print(f"Servo range: {SERVO_RANGE}° (center angle {SERVO_CENTER_ANGLE}° points to bed center)")
     
     # Parse the executable block to get object data
     objects = parse_executable_block(gcode_lines)
@@ -249,10 +255,10 @@ def main():
     
     if run_in_slicer:
         if len(sys.argv) != 2:
-            print("Usage: python gcode_camera_inserter.py <gcode_file>")
+            print("Usage: python point_and_print.py <gcode_file>")
             print("\nThis script will:")
             print("  1. Parse object names and center points from EXECUTABLE_BLOCK_START")
-            print("  2. Insert POINT_CAMERA commands before each EXCLUDE_OBJECT_START")
+            print("  2. Insert SET_SERVO commands before each EXCLUDE_OBJECT_START")
             print("  3. Save the modified gcode to the original file")
             sys.exit(1)
         

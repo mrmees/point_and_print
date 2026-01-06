@@ -1,7 +1,7 @@
-# GCode Camera Position Inserter for Klipper
+# Point and Print - Camera Position Script for Klipper
 
 ## Overview
-This Python script automatically inserts Klipper `SET_SERVO` commands into your 3D printer gcode files. It reads object definitions from the `EXECUTABLE_BLOCK_START` section, calculates the angle between your camera position and each object's center point, and inserts servo positioning commands before each `EXCLUDE_OBJECT_START` line.
+This Python script (`point_and_print.py`) automatically inserts Klipper `SET_SERVO` commands into your 3D printer gcode files. It reads object definitions from the `EXECUTABLE_BLOCK_START` section, calculates the angle between your camera position and each object's center point, and inserts servo positioning commands before each `EXCLUDE_OBJECT_START` line.
 
 The script is designed to be used as a post-processing script in your slicer software, where it will automatically process each gcode file after slicing.
 
@@ -30,6 +30,9 @@ SERVO_RANGE = 180  # Options: 90 or 180 degrees
 # Klipper servo name (must match the name in your printer.cfg)
 SERVO_NAME = "camera_servo"
 
+# Servo angle that points camera at bed center
+SERVO_CENTER_ANGLE = 90.0  # Manually calibrated center angle
+
 # Invert servo angles (for upside-down mounted servos)
 INVERT_SERVO = False  # Set to True if servo is mounted upside down
 # ============================================================================
@@ -53,7 +56,17 @@ INVERT_SERVO = False  # Set to True if servo is mounted upside down
    - Must match the servo name defined in your Klipper `printer.cfg`
    - Example: If your config has `[servo camera_servo]`, use `"camera_servo"`
 
-5. **Set Servo Inversion** (`INVERT_SERVO`)
+5. **Calibrate Servo Center Angle** (`SERVO_CENTER_ANGLE`)
+   - This is the servo angle where the camera points at bed center
+   - **How to calibrate:**
+     1. Use Klipper console: `SET_SERVO SERVO=camera_servo ANGLE=X`
+     2. Try different angles (start with 90° or 45°)
+     3. Find the angle where camera points directly at bed center
+     4. Set `SERVO_CENTER_ANGLE` to this value
+   - Common values: 90 for 180° servo, 45 for 90° servo
+   - Can be any value if servo is mounted off-center
+
+6. **Set Servo Inversion** (`INVERT_SERVO`)
    - Set to `False` for normal servo mounting (default)
    - Set to `True` if servo is mounted upside down
    - When inverted, angles are mirrored over the centerline
@@ -80,27 +93,27 @@ The script is configured to run automatically as a post-processing script in you
 
 **Example slicer configuration:**
 ```
-python /path/to/gcode_camera_inserter.py
+python /path/to/point_and_print.py
 ```
 
 The slicer will automatically append the gcode file path as an argument.
 
 ### Running Manually (For Testing)
 ```bash
-python gcode_camera_inserter.py <path_to_gcode_file>
+python point_and_print.py <path_to_gcode_file>
 ```
 
 **Example:**
 ```bash
-python gcode_camera_inserter.py /path/to/your/print.gcode
+python point_and_print.py /path/to/your/print.gcode
 ```
 
 ### Running in Development Mode
 If you want to test the script without command-line arguments, modify the script:
-1. Open `gcode_camera_inserter.py`
+1. Open `point_and_print.py`
 2. Change `run_in_slicer = True` to `run_in_slicer = False`
 3. Set `path_input` to your test file path
-4. Run the script without arguments: `python gcode_camera_inserter.py`
+4. Run the script without arguments: `python point_and_print.py`
 
 ## What the Script Does
 
@@ -205,30 +218,37 @@ The camera should rotate to point at different parts of the bed.
 
 ## Servo Angle Calculation
 
-The script calculates servo positions assuming the servo's midpoint is aligned to point at the bed center:
+The script calculates servo positions using `SERVO_CENTER_ANGLE` as the reference point where the camera points at bed center.
 
-### For 180° Servo:
-- **Midpoint**: 90° (points at bed center)
-- **Range**: 0-180°
-- **Example**: Object at bed center = 90°, object to the right = 74°, object to the left = 108°
-
-### For 90° Servo:
-- **Midpoint**: 45° (points at bed center)
-- **Range**: 0-90°
-- **Example**: Object at bed center = 45°, object to the right = 29°, object to the left = 64°
-
-### Calculation Method:
+### How It Works:
 1. Calculate angle from camera to bed center (reference)
 2. Calculate angle from camera to object (target)
 3. Find angular difference: `target - reference`
-4. Add to servo midpoint: `servo_angle = midpoint + difference`
+4. Add to servo center angle: `servo_angle = SERVO_CENTER_ANGLE + difference`
 5. Clamp to valid servo range (0-90 or 0-180)
 
-**Example with 180° servo:**
+### Why Manual Calibration?
+
+Different servo mounting positions may result in different center angles:
+- **Centered mount at 90°**: `SERVO_CENTER_ANGLE = 90`
+- **Off-center mount**: `SERVO_CENTER_ANGLE = 75` or any other value
+- **90° servo centered**: `SERVO_CENTER_ANGLE = 45`
+- **90° servo off-center**: `SERVO_CENTER_ANGLE = 50` or any other value
+
+By manually calibrating, you get precise control regardless of how your servo is physically mounted.
+
+### Example Calculation:
+
+**Configuration:**
 - Camera at (0, 0)
 - Bed center at (175, 175)
-- Object at (85, 85) - slightly left and below center
-- Result: ~90° (very close to center, slight adjustment)
+- `SERVO_CENTER_ANGLE = 90`
+
+**Results:**
+- Object at (175, 175) [bed center] → servo angle = 90° (no offset from center)
+- Object at (85, 85) [lower-left] → servo angle = 90° (nearly at center in this example)
+- Object at (250, 85) [right side] → servo angle = 74.54° (15.46° right of center)
+- Object at (85, 250) [top side] → servo angle = 108.69° (18.69° left of center)
 
 ## Requirements
 - Python 3.6 or higher
@@ -265,12 +285,12 @@ After slicing a file, check that the script ran successfully:
 
 **Console Output Example:**
 ```
-Program gcode_camera_inserter.py initiated
+Program point_and_print.py initiated
 Processing file: print.gcode
 Read 9316 lines
 Camera position: (0.0, 0.0)
 Bed size: 350.0x350.0 mm, center: (175.0, 175.0)
-Servo range: 180° (midpoint at 90.0° points to bed center)
+Servo range: 180° (center angle 90.0° points to bed center)
 Found 3 objects:
   GoPro_Shaft.stl_id_0_copy_0: center=(84.9995, 84.9989), servo angle=90.00°
   GoPro_Shaft.stl_id_1_copy_0: center=(150.001, 84.9989), servo angle=74.54°
@@ -300,10 +320,11 @@ If your gcode format differs from the expected format, you may need to adjust th
 - This will mirror all angles over the centerline (60° ↔ 120°, 90° stays 90°)
 
 **Servo doesn't point at objects correctly**
-- Verify physical alignment: at midpoint angle, camera should point at bed center
+- Verify physical alignment: calibrate `SERVO_CENTER_ANGLE` properly
+- Use `SET_SERVO` commands to find angle where camera points at bed center
 - Check `CAMERA_X`, `CAMERA_Y`, `BED_WIDTH`, `BED_DEPTH` settings
 - Ensure `SERVO_RANGE` matches your servo (90 or 180)
-- Test manually: `SET_SERVO SERVO=camera_servo ANGLE=90` should point at bed center
+- See SERVO_CALIBRATION_GUIDE.md for detailed calibration steps
 
 **Servo name error in Klipper**
 - `SERVO_NAME` in script must exactly match servo name in `printer.cfg`

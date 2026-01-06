@@ -129,16 +129,26 @@ SET_SERVO SERVO=camera_servo ANGLE=90
 
 ### Physical Alignment
 
-**Important**: Physically align your servo so that at midpoint, the camera points at bed center:
+**Important**: You need to calibrate which servo angle points the camera at bed center:
 
-1. Send: `SET_SERVO SERVO=camera_servo ANGLE=90` (or 45 for 90° servo)
-2. Manually adjust the camera/mount so it points at bed center
-3. Tighten the servo horn/mount in this position
-4. Test other angles to verify smooth rotation
+1. Send test commands: `SET_SERVO SERVO=camera_servo ANGLE=X`
+2. Try different angles (start with 90° for 180° servo, 45° for 90° servo)
+3. Find the angle where camera points exactly at bed center
+4. This is your `SERVO_CENTER_ANGLE` - record this value!
+
+**Example calibration:**
+```gcode
+# Testing different angles
+SET_SERVO SERVO=camera_servo ANGLE=90  # Too far left?
+SET_SERVO SERVO=camera_servo ANGLE=85  # Too far right?
+SET_SERVO SERVO=camera_servo ANGLE=87  # Perfect! ← Use this as SERVO_CENTER_ANGLE
+```
+
+See `SERVO_CALIBRATION_GUIDE.md` for detailed calibration instructions.
 
 ## Step 5: Configure the Script
 
-Edit `gcode_camera_inserter.py`:
+Edit `point_and_print.py`:
 
 ```python
 CAMERA_X = 0.0      # Your camera's X position
@@ -226,7 +236,7 @@ maximum_pulse_width: 0.0025
 initial_angle: 90
 ```
 
-### gcode_camera_inserter.py
+### point_and_print.py
 ```python
 CAMERA_X = -40.0
 CAMERA_Y = 350.0
@@ -234,6 +244,7 @@ BED_WIDTH = 350.0
 BED_DEPTH = 350.0
 SERVO_RANGE = 180
 SERVO_NAME = "camera_servo"
+SERVO_CENTER_ANGLE = 87.5  # Calibrated angle that points at bed center
 INVERT_SERVO = False  # Set to True if mounted upside down
 ```
 
