@@ -149,7 +149,8 @@ def parse_executable_block(gcode_lines):
 
 def insert_camera_commands(gcode_lines, objects):
     """
-    Insert Klipper SET_SERVO commands with calculated servo angles before each EXCLUDE_OBJECT_START line.
+    Insert Klipper SET_SERVO commands after EXCLUDE_OBJECT_START and the next movement command.
+    Only inserts commands when switching to a different object.
     
     Args:
         gcode_lines: List of gcode lines
@@ -162,7 +163,17 @@ def insert_camera_commands(gcode_lines, objects):
     camera_pos = (CAMERA_X, CAMERA_Y)
     bed_center = (BED_WIDTH / 2.0, BED_DEPTH / 2.0)
     
+    pending_servo_command = None  # Store the servo command to insert later
+    waiting_for_movement = False   # Flag to track when we're waiting for a movement line
+    last_object_name = None        # Track the last object we inserted a command for
+    
+    # Regex to match movement commands (G0, G1, G2, G3 with X, Y, or Z)
+    movement_pattern = re.compile(r'^G[0-3]\s+.*[XYZ]', re.IGNORECASE)
+    
     for line in gcode_lines:
+        # Add the current line first
+        modified_lines.append(line)
+        
         # Check if this line starts an object exclusion
         if line.strip().startswith('EXCLUDE_OBJECT_START NAME='):
             # Extract the object name
@@ -170,21 +181,30 @@ def insert_camera_commands(gcode_lines, objects):
             if match:
                 object_name = match.group(1)
                 
-                # Look up the coordinates for this object
-                if object_name in objects:
-                    object_center = objects[object_name]
-                    
-                    # Calculate the servo angle for the camera to point at the object
-                    angle = calculate_angle(camera_pos, object_center, bed_center)
-                    
-                    # Insert the Klipper SET_SERVO command before the EXCLUDE_OBJECT_START line
-                    camera_command = f"SET_SERVO SERVO={SERVO_NAME} ANGLE={angle:.2f}\n"
-                    modified_lines.append(camera_command)
-                else:
-                    print(f"Warning: Object '{object_name}' not found in EXECUTABLE_BLOCK_START section")
+                # Only insert a servo command if this is a different object than the last one
+                if object_name != last_object_name:
+                    # Look up the coordinates for this object
+                    if object_name in objects:
+                        object_center = objects[object_name]
+                        
+                        # Calculate the servo angle for the camera to point at the object
+                        angle = calculate_angle(camera_pos, object_center, bed_center)
+                        
+                        # Store the servo command to insert after the next movement
+                        pending_servo_command = f"SET_SERVO SERVO={SERVO_NAME} ANGLE={angle:.2f}\n"
+                        waiting_for_movement = True
+                        last_object_name = object_name  # Update the last object
+                    else:
+                        print(f"Warning: Object '{object_name}' not found in EXECUTABLE_BLOCK_START section")
+                # else: skip inserting a command since we're already pointing at this object
         
-        # Add the original line
-        modified_lines.append(line)
+        # If we're waiting for a movement command and this line is a movement command
+        elif waiting_for_movement and movement_pattern.match(line.strip()):
+            # Insert the pending servo command after this movement line
+            if pending_servo_command:
+                modified_lines.append(pending_servo_command)
+                pending_servo_command = None
+                waiting_for_movement = False
     
     return modified_lines
 
