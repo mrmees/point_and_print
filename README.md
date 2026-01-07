@@ -1,3 +1,5 @@
+Just to be 100% transparent - this is all AI generated code, I certainly do not have the capability to program something of this complexity.  Even all of this documentation is AI generated, so there's probably a lot of mistakes.  Please don't hesitate to submit PRs. 
+
 # Point and Print - Camera Position Script for Klipper
 
 ## Overview
