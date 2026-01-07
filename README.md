@@ -83,19 +83,9 @@ INVERT_SERVO = False  # Set to True if servo is mounted upside down
    - Can be any value if servo is mounted off-center
 
 6. **Set Servo Inversion** (`INVERT_SERVO`)
-   - Set to `False` for normal servo mounting (default)
-   - Set to `True` if servo is mounted upside down
+   - Set this to true if for whatever reason your servo is turning the wrong way.  
    - When inverted, angles are mirrored over the centerline
    - Example: 60° becomes 120°, 90° stays 90°, 120° becomes 60°
-
-### How Servo Angles are Calculated:
-
-The script assumes your servo is positioned so that at its **midpoint**, the camera points at the **center of the bed**:
-
-- **90° servo**: Midpoint is 45°, camera points at bed center when servo is at 45°
-- **180° servo**: Midpoint is 90°, camera points at bed center when servo is at 90°
-
-The script calculates the angular difference between the bed center and each object, then adds/subtracts this from the midpoint to determine the servo position needed to point at the object.
 
 ## Usage
 
